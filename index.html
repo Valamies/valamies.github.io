@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Säädöskartta — Suomen lakien Miellekartta</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="support-banner">
+  <span><b>IBAN:</b> FI58 1952 2969 5198 10</span>
+  <span><b>BIC:</b> NDEAFIHH</span>
+  <span><b>Viesti:</b> Verkkosivun kehitystuki</span>
+</div>
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-text">Säädöskartta <small style="font-family:var(--font-mono);font-size:10px;color:var(--gold);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;">Lakikartta</small></div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Etsi laki, esim. Avioliittolaki tai 234/1929" autocomplete="off">
+      </div>
+      <div class="autocomplete" id="autocomplete"></div>
+    </div>
+
+    <div class="toolbar-right">
+      <select id="layout-select" title="Asettelu">
+        <option value="force">Voimapohjainen</option>
+        <option value="hierarchical">Hierarkkinen</option>
+        <option value="circular">Ympyrä</option>
+        <option value="radial">Säteittäinen</option>
+        <option value="grid">Ruudukko</option>
+      </select>
+
+      <div style="position:relative;">
+        <button class="icon-btn" id="btn-filters" title="Suodattimet">⚗ <span class="lbl">Suodattimet</span></button>
+        <div class="dropdown-panel" id="filters-panel">
+          <div class="dp-title">Näkyvyys</div>
+          <label class="switch dp-row"><span>Piilota kumotut</span><span style="display:contents;"><input type="checkbox" id="toggle-kumottu"><span class="track"></span></span></label>
+          <label class="switch dp-row"><span>Piilota kumoutuneet</span><span style="display:contents;"><input type="checkbox" id="toggle-kumoutunut"><span class="track"></span></span></label>
+          <label class="switch dp-row"><span>Näytä nimilaput</span><span style="display:contents;"><input type="checkbox" id="toggle-labels" checked><span class="track"></span></span></label>
+          <label class="switch dp-row"><span>Animoi kaaviota</span><span style="display:contents;"><input type="checkbox" id="toggle-animate"><span class="track"></span></span></label>
+          <hr>
+          <div class="dp-title">Esteettömyys</div>
+          <label class="switch dp-row"><span>Värisokeusystävällinen</span><span style="display:contents;"><input type="checkbox" id="toggle-colorblind"><span class="track"></span></span></label>
+          <label class="switch dp-row"><span>Suuri kontrasti</span><span style="display:contents;"><input type="checkbox" id="toggle-contrast"><span class="track"></span></span></label>
+        </div>
+      </div>
+
+      <div style="position:relative;">
+        <button class="icon-btn" id="btn-tools" title="Työkalut">⚙ <span class="lbl">Työkalut</span></button>
+        <div class="dropdown-panel" id="tools-panel">
+          <button class="dp-action" id="act-reset-view">↺ Palauta näkymä</button>
+          <button class="dp-action" id="act-reset-pos">⤾ Palauta sijainnit</button>
+          <button class="dp-action" id="act-toggle-time">◷ Aikajana</button>
+          <button class="dp-action" id="act-toggle-path">⇄ Reittihaku</button>
+          <button class="dp-action" id="act-toggle-minimap">▦ Pienoiskartta</button>
+          <hr>
+          <div class="dp-title">Tallennetut näkymät</div>
+          <button class="dp-action" id="act-save-view">＋ Tallenna nykyinen näkymä</button>
+          <div id="saved-views-list"></div>
+        </div>
+      </div>
+
+      <button class="icon-btn" id="btn-help" title="Ohje">﹖</button>
+      <button class="hamburger" id="btn-hamburger" title="Valikko">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="graph-pane">
+      <canvas id="graph-canvas"></canvas>
+
+      <div id="path-panel">
+        <div class="pp-head"><span>Reittihaku</span><button class="drawer-close" id="path-close">✕</button></div>
+        <div class="pp-body">
+          <input type="text" id="path-from" placeholder="Mistä (nimi tai tunnus)" list="pf-datalist">
+          <input type="text" id="path-to" placeholder="Mihin (nimi tai tunnus)" list="pf-datalist">
+          <datalist id="pf-datalist"></datalist>
+          <button class="pp-find" id="path-find-btn">Etsi lyhin reitti</button>
+          <div class="pp-result" id="path-result"></div>
+        </div>
+      </div>
+
+      <div class="legend-wrap">
+        <button class="legend-toggle" id="legend-toggle">Selite ▾</button>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div id="minimap-wrap"><canvas id="minimap"></canvas></div>
+
+      <div class="zoom-controls">
+        <button id="zoom-in" title="Lähennä">＋</button>
+        <button id="zoom-out" title="Loitonna">－</button>
+        <button id="zoom-home" title="Palauta näkymä">⌂</button>
+      </div>
+
+      <div id="time-bar">
+        <button id="time-play">▶</button>
+        <span class="year-label" id="time-year">—</span>
+        <input type="range" id="time-slider" min="1900" max="2026" value="2026" step="1">
+        <button id="time-close">✕</button>
+      </div>
+    </div>
+
+    <div id="details-drawer">
+      <div class="drawer-head">
+        <span class="dh-title">Tiedot</span>
+        <button class="drawer-close" id="drawer-close">✕</button>
+      </div>
+      <div class="drawer-body" id="drawer-body">
+        <div class="empty-state">
+          <div class="glyph">§</div>
+          Valitse laki kartalta nähdäksesi sen tiedot, kategorian ja ristiviittaukset.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="fab">
+    <div class="fab-menu">
+      <button id="fab-search">🔍 Haku</button>
+      <button id="fab-filters">⚗ Suodattimet</button>
+      <button id="fab-center">⌂ Keskitä</button>
+      <button id="fab-legend">▦ Selite</button>
+    </div>
+    <button class="fab-main" id="fab-main">＋</button>
+  </div>
+
+  <div id="bottom-sheet">
+    <div class="bs-handle-wrap" id="bs-handle-wrap"><div class="bs-handle"></div></div>
+    <div class="bs-body" id="bs-body"></div>
+  </div>
+
+  <div id="mobile-menu">
+    <div class="mm-sheet">
+      <div class="mm-title">Valikko</div>
+      <div class="mm-item" id="mm-search">Haku <span>🔍</span></div>
+      <div class="mm-item" id="mm-layout-wrap">Asettelu
+        <select id="mm-layout-select" style="background:var(--panel-2);color:var(--paper);border:1px solid #3a4a6b;border-radius:5px;padding:4px;">
+          <option value="force">Voimapohjainen</option>
+          <option value="hierarchical">Hierarkkinen</option>
+          <option value="circular">Ympyrä</option>
+          <option value="radial">Säteittäinen</option>
+          <option value="grid">Ruudukko</option>
+        </select>
+      </div>
+      <div class="mm-item" id="mm-filters">Suodattimet <span>⚗</span></div>
+      <div class="mm-item" id="mm-legend">Selite <span>▦</span></div>
+      <div class="mm-item" id="mm-time">Aikajana <span>◷</span></div>
+      <div class="mm-item" id="mm-path">Reittihaku <span>⇄</span></div>
+      <div class="mm-item" id="mm-reset-view">Palauta näkymä <span>↺</span></div>
+      <div class="mm-item" id="mm-reset-pos">Palauta sijainnit <span>⤾</span></div>
+      <div class="mm-item" id="mm-help">Ohje <span>﹖</span></div>
+      <div class="mm-item" id="mm-close" style="border-bottom:none;color:var(--gold);">Sulje ✕</div>
+    </div>
+  </div>
+
+  <div class="overlay" id="help-overlay">
+    <div class="modal">
+      <h3>Käyttöohje</h3>
+      <ul>
+        <li>Vedä tyhjää aluetta panoroidaksesi karttaa</li>
+        <li>Vedä solmua siirtääksesi sen paikkaa</li>
+        <li>Rullaa hiirellä tai nipistä lähentääksesi/loitontaaksesi</li>
+        <li>Klikkaa solmua valitaksesi sen ja avataksesi tiedot</li>
+        <li>Kaksoisnapauta lähentääksesi kosketusnäytöllä</li>
+        <li>Pitkä painallus solmulla avaa pikavalikon</li>
+        <li>Käytä hakua löytääksesi lain nimellä tai tunnuksella</li>
+      </ul>
+      <button class="modal-close" id="help-close">Sulje</button>
+    </div>
+  </div>
+
+  <div id="site-credit">Y-Tunnus: 3636743-7<br><span class="sc-line2">© Edman Aki</span></div>
+
+  <div id="node-context-menu" style="position:absolute; display:none; z-index:80; background:var(--panel); border:1px solid var(--gold); border-radius:8px; overflow:hidden; box-shadow:0 10px 24px rgba(0,0,0,0.4); color:var(--paper); font-size:12.5px;">
+    <div class="dp-action ctx-item" id="ctx-details" style="padding:9px 14px; cursor:pointer;">Avaa tiedot</div>
+    <div class="dp-action ctx-item" id="ctx-center" style="padding:9px 14px; cursor:pointer;">Keskitä</div>
+    <div class="dp-action ctx-item" id="ctx-finlex" style="padding:9px 14px; cursor:pointer;">Avaa finlex.fi:ssä</div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
